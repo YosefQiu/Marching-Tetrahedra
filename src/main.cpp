@@ -46,8 +46,38 @@ void run(const char* filename, const char* attribute_name, const char* output_na
     }
 
     auto cube_label = VTKFileManager::ReadImageData(filename, attribute_name);
+    auto critical_points = VTKFileManager::ExportCriticalPoints(cube_label);
     auto cube_unstructuredGrid = VTKGrid::CreateCubeMesh(cube_label->mWidth, cube_label->mHeight, cube_label->mDepth);
+
     Debug("cube size %d", cube_unstructuredGrid->GetNumberOfCells());
+
+    Debug("critical points size %d", critical_points.size());
+
+    auto appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+
+    for (vtkIdType index : critical_points) 
+    {
+        double pos[3];
+        // 假设GetPointPositionById是一个函数，根据索引返回网格上点的位置
+        cube_unstructuredGrid->GetPoint(index, pos); // VTK网格可以直接使用GetPoint获取位置
+
+        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+        sphereSource->SetCenter(pos);
+        sphereSource->SetRadius(1.5); // 设置小球的半径，根据需要调整
+        sphereSource->Update();
+
+        appendFilter->AddInputData(sphereSource->GetOutput());
+    }
+
+    appendFilter->Update();
+
+    
+    // 将所有小球保存为VTP文件
+    vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    writer->SetFileName("../res/critical_points.vtp");
+    writer->SetInputData(appendFilter->GetOutput());
+    writer->Write();
+    Debug("Write critical points to ../res/critical_points.vtp");
 
     std::vector<vtkSmartPointer<vtkUnstructuredGrid>> triangle_vec;
     for (auto i = 0; i < cube_unstructuredGrid->GetNumberOfCells(); i++)

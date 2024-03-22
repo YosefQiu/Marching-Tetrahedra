@@ -72,4 +72,5 @@ public:
     static PtrUGrid ReadUnstructuredGrid(std::string const& fileName);
     static PtrImg ReadImageData(std::string const& fileName, std::string const& attribute_name);
     static void WriteUnstructuredGrid(std::string const& fileName, PtrUGrid const& unstructuredGrid);
+    static std::vector<int> ExportCriticalPoints(PtrImg img);
 };

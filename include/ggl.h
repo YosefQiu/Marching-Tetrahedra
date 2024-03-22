@@ -60,6 +60,8 @@
     #include <vtkLine.h>
     #include <vtkCellArray.h>
     #include <vtkAppendFilter.h>
+    #include <vtkSphereSource.h>
+    #include <vtkAppendPolyData.h>
     #include <vtkTetra.h>
     #include <vtkPyramid.h>
     #include <vtkLookupTable.h>

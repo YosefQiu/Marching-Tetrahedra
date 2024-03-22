@@ -93,3 +93,20 @@ void VTKFileManager::WriteUnstructuredGrid(std::string const& fileName, PtrUGrid
     writer->Write();
     Debug("Write unstructured grid to %s", fileName.c_str());
 }
+
+std::vector<int> VTKFileManager::ExportCriticalPoints(PtrImg img)
+{
+	std::set<double> uniqueValues;
+
+    for (vtkIdType i = 0; i < img->mData->GetNumberOfTuples(); ++i) 
+    {
+        for (vtkIdType j = 0; j < img->mData->GetNumberOfComponents(); ++j) 
+        {
+            int value = img->mData->GetComponent(i, j);
+            uniqueValues.insert(value);
+        }
+    }
+
+    std::vector<int> uniqueValuesVector(uniqueValues.begin(), uniqueValues.end());
+    return uniqueValuesVector;
+}
