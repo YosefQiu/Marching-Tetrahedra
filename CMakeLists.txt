@@ -1,6 +1,5 @@
-
 CMAKE_MINIMUM_REQUIRED(VERSION 3.12 FATAL_ERROR)
-INCLUDE(ExternalProject) 
+PROJECT(app CXX)
 
 IF(MSVC)
     SET(CMAKE_GENERATOR_PLATFORM win64)
@@ -8,8 +7,9 @@ ENDIF()
 
 SET(CMAKE_CXX_STANDARD 17)
 
-PROJECT(app)
+SET(VTK_DIR "${CMAKE_CURRENT_SOURCE_DIR}/External/VTK")
 
+# 尝试先找到系统上的VTK
 FIND_PACKAGE(VTK COMPONENTS
   CommonColor
   CommonCore
@@ -25,29 +25,13 @@ FIND_PACKAGE(VTK COMPONENTS
   RenderingCore
   RenderingFreeType
   RenderingGL2PSOpenGL2
-  RenderingOpenGL2
+  RenderingOpenGL2 QUIET
 )
 
-IF (NOT VTK_FOUND)
-  MESSAGE(STATUS "VTK not found. Downloading and building VTK now.")
-
-  ExternalProject_Add(VTK
-    GIT_REPOSITORY https://gitlab.kitware.com/vtk/vtk.git
-    GIT_TAG v9.2.0 
-    CMAKE_ARGS
-      -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/VTK
-      -DVTK_GROUP_ENABLE_Imaging=NO
-      -DVTK_GROUP_ENABLE_MPI=NO
-      -DVTK_GROUP_ENABLE_Qt=NO
-      -DVTK_GROUP_ENABLE_Rendering=YES
-      -DVTK_GROUP_ENABLE_StandAlone=YES
-      -DVTK_GROUP_ENABLE_Views=NO
-      -DVTK_GROUP_ENABLE_Web=NO
-      -DBUILD_SHARED_LIBS=ON
-      -DCMAKE_BUILD_TYPE=Release
-  )
-
-  SET(VTK_DIR ${CMAKE_BINARY_DIR}/VTK/lib/cmake/vtk-9.2) # 更新为VTK 9.2版本路径
+IF(NOT VTK_FOUND)
+  MESSAGE(STATUS "VTK not found. Configuring VTK from the External/VTK directory.")
+  ADD_SUBDIRECTORY(${VTK_DIR})
+  INCLUDE_DIRECTORIES(${VTK_INCLUDE_DIRS})
 ENDIF()
 
 # Prevent a "command line is too long" failure in Windows.
@@ -65,18 +49,14 @@ FILE(GLOB PROJECT_SOURCES src/*.cpp)
 SOURCE_GROUP("Headers" FILES ${PROJECT_HEADERS})
 SOURCE_GROUP("Sources" FILES ${PROJECT_SOURCES})
 
+ADD_EXECUTABLE(${PROJECT_NAME} ${PROJECT_HEADERS} ${PROJECT_SOURCES})
 
-ADD_EXECUTABLE (
-  ${PROJECT_NAME} 
-  ${PROJECT_HEADERS} 
-  ${PROJECT_SOURCES} 
+IF(VTK_LIBRARIES)
+  TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${VTK_LIBRARIES})
+  vtk_module_autoinit(
+    TARGETS ${PROJECT_NAME}
+    MODULES ${VTK_LIBRARIES}
   )
-IF (NOT VTK_FOUND)
-add_dependencies(${PROJECT_NAME} VTK)
+ELSE()
+  MESSAGE(FATAL_ERROR "VTK_LIBRARIES not set")
 ENDIF()
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${VTK_LIBRARIES})
-# vtk_module_autoinit is needed
-vtk_module_autoinit(
-  TARGETS ${PROJECT_NAME}
-  MODULES ${VTK_LIBRARIES}
-)

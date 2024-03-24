@@ -60,6 +60,10 @@ void run(const char* filename, const char* attribute_name, const char* output_na
 
     auto cube_label = VTKFileManager::ReadImageData(filename, attribute_name);
     auto critical_points = VTKFileManager::ExportCriticalPoints(cube_label);
+    if (std::find(critical_points.begin(), critical_points.end(), -1) != critical_points.end())
+    {
+        critical_points.erase(std::remove(critical_points.begin(), critical_points.end(), -1), critical_points.end());
+    }
     auto cube_unstructuredGrid = VTKGrid::CreateCubeMesh(cube_label->mWidth, cube_label->mHeight, cube_label->mDepth);
 
     Debug("cube size %d", cube_unstructuredGrid->GetNumberOfCells());
@@ -82,6 +86,13 @@ void run(const char* filename, const char* attribute_name, const char* output_na
             continue;
         }
 
+        if (std::find(current_cube_label.begin(), current_cube_label.end(), -1) != current_cube_label.end())
+        {
+            continue;
+        }
+
+
+        
         // get current cell grid
         auto current_cube_grid = VTKGrid::ExtractSingleCell(cube_unstructuredGrid, i);
         // split cube to 6 tetrahedron
