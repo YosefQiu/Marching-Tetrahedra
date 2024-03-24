@@ -5,6 +5,16 @@
 #include "LookupTable.h"
 #include "Log.hpp"
 
+std::string getFileName(const std::string& filename) 
+{
+    std::size_t lastDotPosition = filename.find_last_of(".");
+    if (lastDotPosition != std::string::npos) 
+    {
+        return filename.substr(0, lastDotPosition);
+    }
+    // Return original filename if no extension found
+    return filename;
+}
 
 std::string replaceExtension(const std::string& filename, const std::string& newExtension) 
 {
@@ -29,7 +39,10 @@ void printHelp()
 
 void run(const char* filename, const char* attribute_name, const char* output_name = nullptr)
 {
-    std::string finalOutputName;
+    auto path = getFileName(filename);
+    auto finalOutputName = path + "_" + attribute_name + ".vtu";
+    auto sphereOutputName = path + "_" + attribute_name + "_critical_points.vtp";
+    auto polyGridOutputName = path + "_" + attribute_name + "_smooth.vtp";
 
     // Check if output_name is nullptr, and if so, replace the filename extension with .vtu
     if (output_name == nullptr) {
@@ -53,31 +66,10 @@ void run(const char* filename, const char* attribute_name, const char* output_na
 
     Debug("critical points size %d", critical_points.size());
 
-    auto appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+    auto appendFilter = MarchingTetrahedra::AddCriticalPoint(critical_points, cube_unstructuredGrid, 1.5f);
 
-    for (vtkIdType index : critical_points) 
-    {
-        double pos[3];
-        // 假设GetPointPositionById是一个函数，根据索引返回网格上点的位置
-        cube_unstructuredGrid->GetPoint(index, pos); // VTK网格可以直接使用GetPoint获取位置
-
-        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
-        sphereSource->SetCenter(pos);
-        sphereSource->SetRadius(1.5); // 设置小球的半径，根据需要调整
-        sphereSource->Update();
-
-        appendFilter->AddInputData(sphereSource->GetOutput());
-    }
-
-    appendFilter->Update();
-
+    VTKFileManager::WritePolyData(sphereOutputName, appendFilter->GetOutput());
     
-    // 将所有小球保存为VTP文件
-    vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
-    writer->SetFileName("../res/critical_points.vtp");
-    writer->SetInputData(appendFilter->GetOutput());
-    writer->Write();
-    Debug("Write critical points to ../res/critical_points.vtp");
 
     std::vector<vtkSmartPointer<vtkUnstructuredGrid>> triangle_vec;
     for (auto i = 0; i < cube_unstructuredGrid->GetNumberOfCells(); i++)
@@ -154,6 +146,11 @@ void run(const char* filename, const char* attribute_name, const char* output_na
     }
     append->Update();
     VTKFileManager::WriteUnstructuredGrid(finalOutputName, append->GetOutput());
+
+    auto polyGrid = VTKFileManager::UnstructuredGridToPolyData(append->GetOutput());
+    auto smooth_grid = VTKFileManager::CleanData(polyGrid, 1e-6);
+    VTKFileManager::WritePolyData(polyGridOutputName, smooth_grid);
+
     Debug("Finished....");
 }
 
@@ -189,9 +186,8 @@ int main(int argc, char* argv[])
         }
     }
 
-    if (outputFilename.empty())
-        run(inputFilename.c_str(), attributeName.c_str());
-    else
-        run(inputFilename.c_str(), attributeName.c_str(), outputFilename.c_str());
+    run(inputFilename.c_str(), "maxlabel", nullptr);
+    run(inputFilename.c_str(), "minlabel", nullptr);
+    
     return 0;
 }

@@ -94,6 +94,16 @@ void VTKFileManager::WriteUnstructuredGrid(std::string const& fileName, PtrUGrid
     Debug("Write unstructured grid to %s", fileName.c_str());
 }
 
+void VTKFileManager::WritePolyData(std::string const &fileName, vtkSmartPointer<vtkPolyData> polyData)
+{
+    // 将所有小球保存为VTP文件
+    vtkSmartPointer<vtkXMLPolyDataWriter> writer = vtkSmartPointer<vtkXMLPolyDataWriter>::New();
+    writer->SetFileName(fileName.c_str());
+    writer->SetInputData(polyData);
+    writer->Write();
+    Debug("Write data to %s", fileName.c_str());
+}
+
 std::vector<int> VTKFileManager::ExportCriticalPoints(PtrImg img)
 {
 	std::set<double> uniqueValues;
@@ -109,4 +119,21 @@ std::vector<int> VTKFileManager::ExportCriticalPoints(PtrImg img)
 
     std::vector<int> uniqueValuesVector(uniqueValues.begin(), uniqueValues.end());
     return uniqueValuesVector;
+}
+
+VTKFileManager::PtrGrid VTKFileManager::UnstructuredGridToPolyData(PtrUGrid const &unstructuredGrid)
+{
+	auto geometryFilter = vtkSmartPointer<vtkGeometryFilter>::New();
+    geometryFilter->SetInputData(unstructuredGrid);
+    geometryFilter->Update();
+    return geometryFilter->GetOutput();
+}
+
+VTKFileManager::PtrGrid VTKFileManager::CleanData(PtrGrid const &polyData, double tolerance) 
+{ 
+    auto cleanFilter = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleanFilter->SetInputData(polyData);
+    cleanFilter->SetTolerance(tolerance);
+    cleanFilter->Update();
+    return cleanFilter->GetOutput();
 }

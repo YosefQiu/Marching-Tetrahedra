@@ -1,5 +1,6 @@
 
-cmake_minimum_required(VERSION 3.12 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.12 FATAL_ERROR)
+INCLUDE(ExternalProject) 
 
 IF(MSVC)
     SET(CMAKE_GENERATOR_PLATFORM win64)
@@ -15,6 +16,7 @@ FIND_PACKAGE(VTK COMPONENTS
   CommonDataModel
   FiltersCore
   FiltersSources
+  FiltersGeometry
   IOLegacy
   IOXML
   InteractionStyle
@@ -27,7 +29,25 @@ FIND_PACKAGE(VTK COMPONENTS
 )
 
 IF (NOT VTK_FOUND)
-  message(FATAL_ERROR "ReadAllUnstructuredGridTypes: Unable to find the VTK build folder.")
+  MESSAGE(STATUS "VTK not found. Downloading and building VTK now.")
+
+  ExternalProject_Add(VTK
+    GIT_REPOSITORY https://gitlab.kitware.com/vtk/vtk.git
+    GIT_TAG v9.2.0 
+    CMAKE_ARGS
+      -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/VTK
+      -DVTK_GROUP_ENABLE_Imaging=NO
+      -DVTK_GROUP_ENABLE_MPI=NO
+      -DVTK_GROUP_ENABLE_Qt=NO
+      -DVTK_GROUP_ENABLE_Rendering=YES
+      -DVTK_GROUP_ENABLE_StandAlone=YES
+      -DVTK_GROUP_ENABLE_Views=NO
+      -DVTK_GROUP_ENABLE_Web=NO
+      -DBUILD_SHARED_LIBS=ON
+      -DCMAKE_BUILD_TYPE=Release
+  )
+
+  SET(VTK_DIR ${CMAKE_BINARY_DIR}/VTK/lib/cmake/vtk-9.2) # 更新为VTK 9.2版本路径
 ENDIF()
 
 # Prevent a "command line is too long" failure in Windows.
@@ -51,7 +71,9 @@ ADD_EXECUTABLE (
   ${PROJECT_HEADERS} 
   ${PROJECT_SOURCES} 
   )
-
+IF (NOT VTK_FOUND)
+add_dependencies(${PROJECT_NAME} VTK)
+ENDIF()
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PRIVATE ${VTK_LIBRARIES})
 # vtk_module_autoinit is needed
 vtk_module_autoinit(

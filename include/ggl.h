@@ -65,6 +65,8 @@
     #include <vtkTetra.h>
     #include <vtkPyramid.h>
     #include <vtkLookupTable.h>
+    #include <vtkGeometryFilter.h>
+    #include <vtkCleanPolyData.h>
     #include <vtkUnsignedCharArray.h>
     #include <vtkTransform.h>
     #include <vtkTransformFilter.h>

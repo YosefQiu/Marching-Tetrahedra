@@ -316,3 +316,25 @@ MarchingTetrahedra::PtrUGrid MarchingTetrahedra::DoCase4(vtkSmartPointer<vtkPoin
     }
     
 }
+
+MarchingTetrahedra::PtrGrid MarchingTetrahedra::AddCriticalPoint(std::vector<int>& critical_points, PtrUGrid const& cube_unstructuredGrid, float radius)
+{
+	auto appendFilter = vtkSmartPointer<vtkAppendPolyData>::New();
+
+    for (vtkIdType index : critical_points) 
+    {
+        double pos[3];
+        // 假设GetPointPositionById是一个函数，根据索引返回网格上点的位置
+        cube_unstructuredGrid->GetPoint(index, pos); // VTK网格可以直接使用GetPoint获取位置
+
+        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+        sphereSource->SetCenter(pos);
+        sphereSource->SetRadius(radius); // 设置小球的半径，根据需要调整
+        sphereSource->Update();
+
+        appendFilter->AddInputData(sphereSource->GetOutput());
+    }
+
+    appendFilter->Update();
+    return appendFilter;
+}

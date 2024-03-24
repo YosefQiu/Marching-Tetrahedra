@@ -6,6 +6,7 @@ class VTKFileManager
 {
 public:
     using PtrUGrid      = vtkSmartPointer<vtkUnstructuredGrid>;
+    using PtrGrid       = vtkSmartPointer<vtkPolyData>;
     using PtrUGWriter   = vtkSmartPointer<vtkXMLUnstructuredGridWriter>;
     struct ImageDataArray
     {
@@ -72,5 +73,8 @@ public:
     static PtrUGrid ReadUnstructuredGrid(std::string const& fileName);
     static PtrImg ReadImageData(std::string const& fileName, std::string const& attribute_name);
     static void WriteUnstructuredGrid(std::string const& fileName, PtrUGrid const& unstructuredGrid);
+    static void WritePolyData(std::string const& fileName, vtkSmartPointer<vtkPolyData> polyData);
     static std::vector<int> ExportCriticalPoints(PtrImg img);
+    static PtrGrid UnstructuredGridToPolyData(PtrUGrid const& unstructuredGrid);    
+    static PtrGrid CleanData(PtrGrid const& polyData, double tolerance = 1e-6);
 };
