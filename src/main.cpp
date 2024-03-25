@@ -5,6 +5,8 @@
 #include "LookupTable.h"
 #include "Log.hpp"
 
+#include <mpi.h>
+
 std::string getFileName(const std::string& filename) 
 {
     std::size_t lastDotPosition = filename.find_last_of(".");
@@ -167,6 +169,45 @@ void run(const char* filename, const char* attribute_name, const char* output_na
 
 int main(int argc, char* argv[])
 {
+    // std::string inputFilename ;
+    // std::string attributeName;
+    // std::string outputFilename;
+
+    // for (int i = 1; i < argc; ++i) 
+    // { 
+    //     std::string arg = argv[i];
+    //     if (arg == "-h") 
+    //     {
+    //         printHelp();
+    //         return 0;
+    //     } else if (arg == "-input" && i + 1 < argc) 
+    //     { 
+    //         inputFilename = argv[++i]; 
+    //     } 
+    //     else if (arg == "-attribute" && i + 1 < argc) 
+    //     {
+    //         attributeName = argv[++i];
+    //     } 
+    //     else if (arg == "-output" && i + 1 < argc) 
+    //     {
+    //         outputFilename = argv[++i];
+    //     } 
+    //     else 
+    //     {
+    //         std::cerr << "Unknown option or missing argument: " << arg << std::endl;
+    //         return 1;
+    //     }
+    // }
+
+    // run(inputFilename.c_str(), "maxlabel", nullptr);
+    // run(inputFilename.c_str(), "minlabel", nullptr);
+    
+    // return 0;
+    MPI_Init(&argc, &argv);
+
+    int world_rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
     std::string inputFilename ;
     std::string attributeName;
     std::string outputFilename;
@@ -177,6 +218,7 @@ int main(int argc, char* argv[])
         if (arg == "-h") 
         {
             printHelp();
+            MPI_Finalize();
             return 0;
         } else if (arg == "-input" && i + 1 < argc) 
         { 
@@ -193,12 +235,17 @@ int main(int argc, char* argv[])
         else 
         {
             std::cerr << "Unknown option or missing argument: " << arg << std::endl;
+            MPI_Finalize();
             return 1;
         }
     }
 
-    run(inputFilename.c_str(), "maxlabel", nullptr);
-    run(inputFilename.c_str(), "minlabel", nullptr);
-    
+    if (world_rank == 0) {
+        run(inputFilename.c_str(), "maxlabel", nullptr);
+    } else if (world_rank == 1) {
+        run(inputFilename.c_str(), "minlabel", nullptr);
+    }
+
+    MPI_Finalize();
     return 0;
 }

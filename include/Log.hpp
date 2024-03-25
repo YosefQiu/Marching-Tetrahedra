@@ -24,10 +24,10 @@ void ReportEngineError(const char* msg);
 #else
 #define Debug(f,...)
 #endif
-#define Error(f,...) ErrorLog(__FILE__,__LINE__,f,##__VA_ARGS__)
-#define Info(f,...) InfoLog(__FILE__,__LINE__,f,##__VA_ARGS__)
-#define errorC(f,...) EditorErrorLog(__FILE__,__LINE__,f,##__VA_ARGS__)
-#define DebugLambda(lambda) lambda()
+#define MyError(f,...) ErrorLog(__FILE__,__LINE__,f,##__VA_ARGS__)
+#define MyInfo(f, ...) InfoLog(__FILE__, __LINE__, f, ##__VA_ARGS__)
+#define MyerrorC(f,...) EditorErrorLog(__FILE__,__LINE__,f,##__VA_ARGS__)
+#define MyDebugLambda(lambda) lambda()
 
 class EngineLog
 {
@@ -53,7 +53,7 @@ inline void ReportEngineError(const char* msg)
         gEngineErrorReporter(msg);
     }
     else {
-        Error("%s", msg);
+        MyError("%s", msg);
     }
 }
 
